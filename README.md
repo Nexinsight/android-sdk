@@ -227,6 +227,22 @@ Initialize with `Eventsdk.newConfig(appUUID, databasePath)` to populate defaults
 | `userID`, `sendInstallIDAsUID` | Empty, off | See behavioral notes |
 | `autoHideOnBackground` | On | Disable with `disableAutoHideOnBackground()` |
 
+## Publishing
+
+Maintainers publish a new version to GitHub Packages with `publish.sh`. It requires Maven and a GitHub token with the `write:packages` scope.
+
+```sh
+GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh
+```
+
+The version is read from `android:versionName` in the AAR manifest. Pass it explicitly to override:
+
+```sh
+GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh 0.2.0
+```
+
+The script uploads `nexinsight.aar` with `nexinsight-sources.jar` attached as the sources artifact and generates the POM. GitHub Packages does not allow overwriting an existing version, so bump the version before publishing again.
+
 ## Behaviour worth knowing
 
 **Sessions.** The session identifier is generated locally and rotates after `sessionTimeoutSeconds` of inactivity, including offline periods. The session persists across app launches within the timeout window. Queued events retain their original session ID regardless of delivery timing.
