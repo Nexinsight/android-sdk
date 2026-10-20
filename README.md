@@ -36,14 +36,14 @@ Then add the dependency to your module:
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.nexinsight:sdk:0.1.0")
+    implementation("com.nexinsight:sdk:0.2.0")
 }
 ```
 
 ```groovy
 // app/build.gradle
 dependencies {
-    implementation 'com.nexinsight:sdk:0.1.0'
+    implementation 'com.nexinsight:sdk:0.2.0'
 }
 ```
 
@@ -258,3 +258,48 @@ The script uploads `nexinsight.aar` with `nexinsight-sources.jar` attached as th
 **Process lifetime.** Create one `Tracker` per app process, keep it for the process lifetime, and call `close` on shutdown. Undelivered events stay on disk and are picked up by the next run. After `close` the tracker is unusable and methods fail with `Eventsdk.getErrClosed()`.
 
 **Threads.** `flush` and `close` perform blocking I/O. Do not call them on the main thread.
+
+## Changelog
+
+### 0.2.0
+
+**Deep links.** `setDeepLink(uri)` records the URI the app was opened with (Intent data, App Link or `Activity.referrer`). The next event carries it as `ref` instead of the previous screen, so the collector records it as the session origin. Exactly one event carries it. Because the collector locks a session's origin from its first event, a deep link that arrives after the current session already sent an event starts a new session; disable this with `disableDeepLinkSessionRotation()` to keep the session and still send the link as `ref`. The URI is trimmed, control characters are dropped, and anything beyond 2048 bytes is truncated. New accessors: `deepLink()` returns the link still waiting to be sent, `sessionOrigin()` returns the `ref` of the current session's first event.
+
+Call it before the first `trackView` of the launch, and again from `onNewIntent` for `singleTop`/`singleTask` activities:
+
+```kotlin
+private fun reportDeepLink(intent: Intent?) {
+    val uri = intent?.data ?: (if (Build.VERSION.SDK_INT >= 22) referrer else null)
+    uri?.let { tracker.setDeepLink(it.toString()) }
+}
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    reportDeepLink(intent)
+    tracker.trackView("home")
+}
+
+override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    reportDeepLink(intent)
+}
+```
+
+**Automatic MyGaru identification.** Enabled by default. The SDK fetches a MyGaru one-time token in the background and attaches it once as `otp` to the next regular event (`view`/`close`/`hide`); no `ident` event is emitted. Fetches happen on tracker start, on every session rotation (inactivity, `resetSession`, deep link) and when an event or `onForeground` follows more than `identifyAfterIdleSeconds` of inactivity. The fetch never blocks the caller, is bounded by `identifyTimeoutSeconds`, and is cancelled by `close`. The token lives in memory only. A failure is logged once at Warn and events simply carry no `otp`; this is typical over Wi-Fi, where the endpoint lacks carrier data. An explicit `Event.setOTP` wins for that event, and `identify(otp)` remains the manual route. `otp()` returns the token currently held. Opt out with `cfg.disableAutoIdentify()` before creating the tracker.
+
+New `Config` fields:
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `deepLinkStartsNewSession` | On | Disable with `disableDeepLinkSessionRotation()` |
+| `autoIdentify` | On | Disable with `disableAutoIdentify()` |
+| `myGaruPartnerID` | Collector's partner id | `p` parameter of the identification request |
+| `myGaruIdentURL` | `https://ident.mygaru.com/v2/id` | Must be an absolute HTTP(S) URL; override for staging |
+| `identifyTimeoutSeconds` | `5` | Bound of one token fetch |
+| `identifyAfterIdleSeconds` | `600` | Idle gap after which a fresh token is fetched; `0` disables |
+
+**Session origin persistence.** Whether the current session already has an origin is now persisted, so a restart within the session window does not forget it.
+
+### 0.1.0
+
+Initial release: durable SQLite event queue, background delivery with retries and backoff, sessions, install id, lifecycle handlers and batch endpoint support.
