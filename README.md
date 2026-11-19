@@ -36,14 +36,14 @@ Then add the dependency to your module:
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.nexinsight:sdk:0.2.2")
+    implementation("com.nexinsight:sdk:0.2.3")
 }
 ```
 
 ```groovy
 // app/build.gradle
 dependencies {
-    implementation 'com.nexinsight:sdk:0.2.2'
+    implementation 'com.nexinsight:sdk:0.2.3'
 }
 ```
 
@@ -238,7 +238,7 @@ GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh
 The version is read from `android:versionName` in the AAR manifest. Pass it explicitly to override:
 
 ```sh
-GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh 0.2.2
+GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh 0.2.3
 ```
 
 The script uploads `nexinsight.aar` with `nexinsight-sources.jar` attached as the sources artifact and generates the POM. GitHub Packages does not allow overwriting an existing version, so bump the version before publishing again.
@@ -260,6 +260,10 @@ The script uploads `nexinsight.aar` with `nexinsight-sources.jar` attached as th
 **Threads.** `flush` and `close` perform blocking I/O. Do not call them on the main thread.
 
 ## Changelog
+
+### 0.2.3
+
+**Smaller binary.** Built with `-trimpath` and without debug symbols: the AAR shrinks from about 32 MB to 15 MB and no longer embeds build-machine paths. Stack traces keep function names. No behaviour or API changes.
 
 ### 0.2.2
 
