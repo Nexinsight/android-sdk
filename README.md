@@ -36,14 +36,14 @@ Then add the dependency to your module:
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.nexinsight:sdk:0.2.1")
+    implementation("com.nexinsight:sdk:0.2.2")
 }
 ```
 
 ```groovy
 // app/build.gradle
 dependencies {
-    implementation 'com.nexinsight:sdk:0.2.1'
+    implementation 'com.nexinsight:sdk:0.2.2'
 }
 ```
 
@@ -238,7 +238,7 @@ GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh
 The version is read from `android:versionName` in the AAR manifest. Pass it explicitly to override:
 
 ```sh
-GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh 0.2.1
+GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh 0.2.2
 ```
 
 The script uploads `nexinsight.aar` with `nexinsight-sources.jar` attached as the sources artifact and generates the POM. GitHub Packages does not allow overwriting an existing version, so bump the version before publishing again.
@@ -255,11 +255,15 @@ The script uploads `nexinsight.aar` with `nexinsight-sources.jar` attached as th
 
 **Install id.** `installID()` returns a random, persisted pseudonymous identifier. It is not transmitted unless `sendInstallIDAsUID` is enabled, and an explicit `setUserID` takes precedence.
 
-**Process lifetime.** Create one `Tracker` per app process, keep it for the process lifetime, and call `close` on shutdown. Undelivered events stay on disk and are picked up by the next run. After `close` the tracker is unusable and methods fail with `Eventsdk.getErrClosed()`.
+**Process lifetime.** Create one `Tracker` per app process, keep it for the process lifetime, and call `close` on shutdown. Undelivered events stay on disk and are picked up by the next run. After `close` the tracker is unusable and methods fail with `Eventsdk.getErrClosed()`. A second `newTracker` on the same database while the first is still open throws `Eventsdk.getErrAlreadyOpen()`.
 
 **Threads.** `flush` and `close` perform blocking I/O. Do not call them on the main thread.
 
 ## Changelog
+
+### 0.2.2
+
+**One tracker per database.** `Eventsdk.newTracker` now throws `Eventsdk.getErrAlreadyOpen()` while another live tracker in the same process uses the same database path (aliases such as `..` or symlinked directories count as the same path). Before, a second tracker started silently and released the first one's in-flight deliveries, so the same events reached the collector twice. Keep one tracker for the process lifetime, or `close` the old one first. A separate process (e.g. a `:remote` service) still needs its own database file.
 
 ### 0.2.1
 
