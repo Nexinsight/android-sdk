@@ -36,14 +36,14 @@ Then add the dependency to your module:
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.nexinsight:sdk:0.2.0")
+    implementation("com.nexinsight:sdk:0.2.1")
 }
 ```
 
 ```groovy
 // app/build.gradle
 dependencies {
-    implementation 'com.nexinsight:sdk:0.2.0'
+    implementation 'com.nexinsight:sdk:0.2.1'
 }
 ```
 
@@ -238,7 +238,7 @@ GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh
 The version is read from `android:versionName` in the AAR manifest. Pass it explicitly to override:
 
 ```sh
-GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh 0.2.0
+GITHUB_ACTOR=your-github-user GITHUB_TOKEN=ghp_xxx ./publish.sh 0.2.1
 ```
 
 The script uploads `nexinsight.aar` with `nexinsight-sources.jar` attached as the sources artifact and generates the POM. GitHub Packages does not allow overwriting an existing version, so bump the version before publishing again.
@@ -260,6 +260,12 @@ The script uploads `nexinsight.aar` with `nexinsight-sources.jar` attached as th
 **Threads.** `flush` and `close` perform blocking I/O. Do not call them on the main thread.
 
 ## Changelog
+
+### 0.2.1
+
+**Version reporting fixed.** The 0.2.0 binary was built without the release version stamp and reported `0.1.0` in its User-Agent; 0.2.1 reports `0.2.1`. No behaviour changes.
+
+`Eventsdk.Version` is now exposed as `Eventsdk.getVersion()` instead of a `static final String` constant; Java/Kotlin code that read the field must call the getter.
 
 ### 0.2.0
 
